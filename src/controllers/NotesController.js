@@ -2,33 +2,36 @@ const knex = require("../database/knex");
 
 class NotesController {
   async create(request, response) {
-    const { title, description, tags, links } = request.body;
+    const { title, description, tags = [], rating } = request.body;
     const { user_id } = request.params;
+
+    // Verifica se o rating está no intervalo correto
+    if (rating < 1 || rating > 5) {
+      return response
+        .status(400)
+        .json({ error: "Rating must be between 1 and 5" });
+    }
 
     const [note_id] = await knex("notes").insert({
       title,
       description,
       user_id,
+      rating
     });
 
-    const linksInsert = links.map((link) => {
-      return {
-        note_id,
-        url: link,
-      };
-    });
 
-    await knex("links").insert(linksInsert);
 
-    const tagsInsert = tags.map((name) => {
-      return {
-        note_id,
-        name,
-        user_id,
-      };
-    });
+    if (tags.length > 0) {
+      const tagsInsert = tags.map((name) => {
+        return {
+          note_id,
+          name,
+          user_id,
+        };
+      });
 
-    await knex("tags").insert(tagsInsert);
+      await knex("tags").insert(tagsInsert);
+    }
 
     response.json();
   }
@@ -45,7 +48,6 @@ class NotesController {
     return response.json({
       ...note,
       tags,
-      links,
     });
   }
 
@@ -66,7 +68,7 @@ class NotesController {
       const filterTags = tags.split(",").map((tag) => tag.trim());
 
       notes = await knex("tags")
-        .select(["notes.id", "notes.title", "notes.user_id"])
+        .select(["notes.id", "notes.title", "notes.user_id", "notes.rating"])
         .where("notes.user_id", user_id)
         .whereLike("notes.title", `%${title}%`)
         .whereIn("name", filterTags)
