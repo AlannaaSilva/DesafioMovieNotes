@@ -12,7 +12,18 @@ class NotesController {
       rating
     });
 
-    if (tags.length > 0) {
+    if(links & links.length > 0){
+       const linkInsert = links.map((link) => {
+         return {
+           note_id,
+           url: link,
+         };
+       });
+
+       await knex("links").insert(linkInsert);
+    }
+
+    if (tags & tags.length > 0) {
       const tagsInsert = tags.map((name) => {
         return {
           note_id,
