@@ -9,26 +9,20 @@ class NotesController {
       title,
       description,
       user_id,
+      rating
     });
 
-    const linksInsert = links.map((link) => {
-      return {
-        note_id,
-        url: link,
-      };
-    });
+    if (tags.length > 0) {
+      const tagsInsert = tags.map((name) => {
+        return {
+          note_id,
+          name,
+          user_id,
+        };
+      });
 
-    await knex("links").insert(linksInsert);
-
-    const tagsInsert = tags.map((name) => {
-      return {
-        note_id,
-        name,
-        user_id,
-      };
-    });
-
-    await knex("tags").insert(tagsInsert);
+      await knex("tags").insert(tagsInsert);
+    }
 
     return response.json();
   }
@@ -45,7 +39,6 @@ class NotesController {
     return response.json({
       ...note,
       tags,
-      links,
     });
   }
 
@@ -67,7 +60,7 @@ class NotesController {
       const filterTags = tags.split(",").map((tag) => tag.trim());
 
       notes = await knex("tags")
-        .select(["notes.id", "notes.title", "notes.user_id"])
+        .select(["notes.id", "notes.title", "notes.user_id", "notes.rating"])
         .where("notes.user_id", user_id)
         .whereLike("notes.title", `%${title}%`)
         .whereIn("name", filterTags)
